@@ -1,0 +1,845 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "learning-hub",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "442cd6b3-cf3c-4779-98f3-5dc380e09806",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1632,
+        528
+      ],
+      "webhookId": "c3d4e5f6-a7b8-9c0d-e1f2-a3b4c5d6e7f8"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "originalContent",
+              "value": "={{ $json.body.content }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "contentType",
+              "value": "={{ $json.body.contentType }}",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "language",
+              "value": "={{ $json.body.language || 'English' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f42ca514-5869-4429-9420-b26f4734daaa",
+      "name": "Prepare Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1472,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.contentType }}",
+                    "rightValue": "youtube",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "route-yt-001"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "YouTube"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.contentType }}",
+                    "rightValue": "youtube",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    },
+                    "id": "route-other-001"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Other"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "002662cf-7dc1-4d88-867a-4b9e9a2f399a",
+      "name": "Route by Content Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1216,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.supadata.ai/v1/youtube/transcript?url={{ encodeURIComponent($json.originalContent) }}&text=true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "6e57dfc6-89c5-453d-ab54-cc544d1a8500",
+      "name": "Fetch YouTube Transcript",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -992,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "sy1",
+              "name": "enrichedContent",
+              "value": "={{ $json.content ? '[YouTube Transcript]\\n' + $json.content : '[Could not fetch transcript — URL: ' + $('Prepare Input').first().json.originalContent + ']' }}",
+              "type": "string"
+            },
+            {
+              "id": "sy2",
+              "name": "contentType",
+              "value": "={{ $('Prepare Input').first().json.contentType }}",
+              "type": "string"
+            },
+            {
+              "id": "sy3",
+              "name": "language",
+              "value": "={{ $('Prepare Input').first().json.language }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d05dc311-33aa-4b4c-bd96-830e41b2c1e3",
+      "name": "Set YouTube Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -720,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "so1",
+              "name": "enrichedContent",
+              "value": "={{ $json.originalContent }}",
+              "type": "string"
+            },
+            {
+              "id": "so2",
+              "name": "contentType",
+              "value": "={{ $json.contentType }}",
+              "type": "string"
+            },
+            {
+              "id": "so3",
+              "name": "language",
+              "value": "={{ $json.language }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "28d53839-dda3-4309-891f-0d0d80c1c260",
+      "name": "Set Other Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -944,
+        800
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "804d1ca3-3a84-4a3f-a056-0efa219af039",
+      "name": "Merge Content Paths",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -448,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a comprehensive summary of the following content.\n\nContent Type: {{ $json.contentType }}\nLanguage: {{ $json.language }}\nContent:\n{{ $json.enrichedContent }}\n\nIMPORTANT: Use the web_search tool to find 2-3 additional recent facts or context about the main topic before writing. Use wikipedia to verify key facts.\n\nProvide a well-structured summary in {{ $json.language }} that covers all key points and main ideas. Use markdown formatting with headers (##), bullet points, and bold text for important terms. Include:\n- An overview paragraph\n- Key takeaways\n- Any relevant recent context found via web search",
+        "options": {
+          "systemMessage": "You are an expert educator and content summarizer. You have access to web search and Wikipedia tools — always use them to enrich your summaries with current, factual information. Create clear, comprehensive summaries. Always respond in the language specified by the user."
+        }
+      },
+      "id": "e9736a3a-83aa-40b4-b810-ae21d5ea30c7",
+      "name": "Summary Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -16,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate detailed, structured study notes for the following content.\n\nContent Type: {{ $json.contentType }}\nLanguage: {{ $json.language }}\nContent:\n{{ $json.enrichedContent }}\n\nIMPORTANT: Use the web_search tool to find supplementary explanations, and use wikipedia to look up definitions of any key terms before writing notes.\n\nCreate detailed study notes in {{ $json.language }} with the following structure:\n- Use ## for main topics and ### for subtopics\n- Include definitions, explanations, and examples enriched with real web sources\n- Highlight key terms in **bold**\n- Use numbered lists for sequential information\n- Use bullet points for non-sequential details\n- Add a 'Key Concepts' section at the end\n- Add a 'Further Reading' section with 2-3 real sources found via web search",
+        "options": {
+          "systemMessage": "You are an expert note-taker and educator. You have access to web search and Wikipedia — always use them to add real examples, definitions, and sources to your notes. Always respond in the language specified by the user."
+        }
+      },
+      "id": "14704873-57d0-4539-87f7-b1c0f2e99ee0",
+      "name": "Notes Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -16,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate an interactive quiz based on the following content.\n\nContent Type: {{ $json.contentType }}\nLanguage: {{ $json.language }}\nContent:\n{{ $json.enrichedContent }}\n\nIMPORTANT: Use web_search and wikipedia to verify that all answers and facts in your questions are 100% accurate before generating the quiz.\n\nCreate exactly 5 multiple choice questions in {{ $json.language }}. Each question must have exactly 4 options. Make questions progressively harder. Test understanding, not just recall.\n\nYou MUST respond with ONLY valid JSON in this exact format (no markdown, no code blocks, no extra text):\n{\"questions\":[{\"question\":\"...\",\"options\":[\"...\",\"...\",\"...\",\"...\"],\"correctAnswer\":\"...\",\"explanation\":\"...\"}]}",
+        "options": {
+          "systemMessage": "You are an expert quiz maker. You have access to web search and Wikipedia — always use them to verify facts before creating questions. Create challenging but accurate MCQs. Always respond in the language specified. Return ONLY valid JSON."
+        }
+      },
+      "id": "54b0d10d-3b1a-494f-89ba-64dc81997e55",
+      "name": "Quiz Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -16,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate flashcards based on the following content.\n\nContent Type: {{ $json.contentType }}\nLanguage: {{ $json.language }}\nContent:\n{{ $json.enrichedContent }}\n\nIMPORTANT: Use wikipedia to look up precise definitions and use web_search to find real-world examples for the back of each flashcard.\n\nCreate exactly 8 flashcards in {{ $json.language }}. Each flashcard should cover a distinct concept. The front should be a question or term, the back should be a concise but complete answer enriched with a real-world example where possible.\n\nYou MUST respond with ONLY valid JSON in this exact format (no markdown, no code blocks, no extra text):\n{\"cards\":[{\"front\":\"...\",\"back\":\"...\"}]}",
+        "options": {
+          "systemMessage": "You are an expert educator specializing in spaced repetition learning. You have access to web search and Wikipedia — always use them to create accurate, example-rich flashcards. Always respond in the language specified. Return ONLY valid JSON."
+        }
+      },
+      "id": "5a3c1827-15cb-41b3-98a9-539d85b6509e",
+      "name": "Flashcards Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -16,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "de33ee53-35b6-4646-947b-12a24189aa45",
+      "name": "Google Gemini Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fs1",
+              "name": "contentType",
+              "value": "summary",
+              "type": "string"
+            },
+            {
+              "id": "fs2",
+              "name": "content",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5a7372f-89b4-4dc3-ad14-c375d909d86a",
+      "name": "Format Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fn1",
+              "name": "contentType",
+              "value": "notes",
+              "type": "string"
+            },
+            {
+              "id": "fn2",
+              "name": "content",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "872021f1-352e-4720-822e-bd9580acd247",
+      "name": "Format Notes",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fq1",
+              "name": "contentType",
+              "value": "quiz",
+              "type": "string"
+            },
+            {
+              "id": "fq2",
+              "name": "content",
+              "value": "={{ JSON.stringify($json.output) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a8839b02-95c1-45e1-a561-95e38d00b541",
+      "name": "Format Quiz",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ff1",
+              "name": "contentType",
+              "value": "flashcards",
+              "type": "string"
+            },
+            {
+              "id": "ff2",
+              "name": "content",
+              "value": "={{ JSON.stringify($json.output) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d5d359c1-870a-4c59-82f5-712bf53141cf",
+      "name": "Format Flashcards",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "id": "ecd9c495-a96a-461f-87f6-9c3e9a991de1",
+      "name": "Merge All Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        496,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst result = {};\n\nfor (const item of items) {\n  const ct = item.json.contentType;\n  const c = item.json.content;\n  if (ct === 'quiz' || ct === 'flashcards') {\n    try {\n      // Strip markdown code blocks if present\n      const cleaned = typeof c === 'string' ? c.replace(/```json\\n?|```\\n?/g, '').trim() : c;\n      result[ct] = typeof cleaned === 'string' ? JSON.parse(cleaned) : cleaned;\n    } catch (e) {\n      result[ct] = c;\n    }\n  } else {\n    result[ct] = c;\n  }\n}\n\nreturn [{ json: result }];"
+      },
+      "id": "74de7e41-64e6-4093-b97d-3718db919fa0",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "d17a1865-dca1-41b9-9426-778bc0f29351",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        944,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🚀 Augmented Learning Hub Workflow\n\n**What's new vs the basic version:**\n\n1. **YouTube Transcript Fetching**\n   - Automatically extracts real transcript via Supadata API\n   - Agents get actual video content, not just the URL\n   - Requires: Supadata API key (free tier available at supadata.ai)\n\n2. **Web Search Tool (SerpAPI)**\n   - All 4 agents can search the web for real, current info\n   - Enriches summaries, notes, quiz answers with live facts\n   - Requires: SerpAPI key (free tier at serpapi.com)\n\n3. **Wikipedia Tool**\n   - Agents verify definitions and key terms before generating\n   - No API key needed — built into n8n\n\n**Webhook:** POST /webhook/learning-hub\n```json\n{\n  \"content\": \"text, YouTube URL, or base64\",\n  \"contentType\": \"text | youtube | pdf | image\",\n  \"language\": \"English\"\n}\n```",
+        "height": 564,
+        "width": 640,
+        "color": 2
+      },
+      "id": "2a5dbacc-9a29-42cc-b9f2-f516b17dc74d",
+      "name": "Sticky Note - Augmented Info",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1632,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Step 1 — Input Normalization\n\nExtracts content, contentType, language\nfrom webhook body into clean fields\nfor all downstream nodes to use.",
+        "width": 280,
+        "color": 7
+      },
+      "id": "c4d254ec-0b69-40b9-9ca1-29454a63e7af",
+      "name": "Sticky Note - Prepare",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Step 2 — YouTube Augmentation\n\nIf contentType = 'youtube':\n→ Fetches real transcript via Supadata API\n→ Passes actual text content to agents\n\nIf other type:\n→ Passes original content through\n\nBoth paths merge before agents.",
+        "height": 280,
+        "width": 372,
+        "color": 4
+      },
+      "id": "d9dade8f-608a-452e-ad47-26c427c27554",
+      "name": "Sticky Note - YouTube",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Step 3 — Augmented Agents\n\nEach agent has 3 tools attached:\n• Gemini LLM (language model)\n• SerpAPI (web search)\n• Wikipedia (fact lookup)\n\nAgents actively search before\ngenerating — real augmentation!",
+        "height": 232,
+        "width": 380,
+        "color": 3
+      },
+      "id": "0fa4a4e3-78a5-49e2-9d81-ae04fcf6f6bb",
+      "name": "Sticky Note - Agents",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "ea77f7e4-a5e5-45a2-b847-908227853e05",
+      "name": "web_search",
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        1152
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "b28ff39d-18af-429f-a9a4-f66bd2acd2cb",
+      "name": "wikipedia_search",
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        208,
+        1152
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Input": {
+      "main": [
+        [
+          {
+            "node": "Route by Content Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Content Type": {
+      "main": [
+        [
+          {
+            "node": "Fetch YouTube Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Other Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch YouTube Transcript": {
+      "main": [
+        [
+          {
+            "node": "Set YouTube Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set YouTube Content": {
+      "main": [
+        [
+          {
+            "node": "Merge Content Paths",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Other Content": {
+      "main": [
+        [
+          {
+            "node": "Merge Content Paths",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Content Paths": {
+      "main": [
+        [
+          {
+            "node": "Summary Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notes Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Quiz Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Flashcards Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summary Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notes Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quiz Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Quiz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flashcards Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Flashcards",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summary Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Notes Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Quiz Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Flashcards Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Summary": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Notes": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Format Quiz": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Format Flashcards": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Merge All Results": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "web_search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Summary Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Notes Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Quiz Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Flashcards Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "wikipedia_search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Summary Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Notes Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Quiz Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Flashcards Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a7a256c914deee4b39eda418326dcb432c1abd5efd16de4bdcefc26e4f122c7c",
+    "publicShareVersion": true,
+    "note": "Public/shareable n8n workflow export. Configure your own n8n credentials for Gemini, Supadata, SerpAPI and any other external services before use."
+  }
+}
